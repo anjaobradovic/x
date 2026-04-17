@@ -1,81 +1,40 @@
 import pandas as pd
 import plotly.express as px
 
-#1
-df = pd.read_csv("Mx/Filmovi.csv")
+# 1
+df = pd.read_csv("Filmovi.csv")
+print(df.columns)
 
-print(df.head(10))
-
-#2
-print("Ukupan broj redova:", len(df))
-
-print("\nPrazne vrijednosti po kolonama:")
+# 2
 print(df.isnull().sum())
+print(df.dtypes)
 
-#3
+# 3
+print(df[df["cast"].str.contains("James McAvoy", na=False)]["title"])
 
-anne_movies = df[df["cast"].str.contains("Anne Hathaway", na=False)]
+# 4
+print(df.sort_values(by="title")["title"])
 
-print(anne_movies["title"])
+# 5
+df_genres = df.assign(genres=df["genres"].str.split(", ")).explode("genres")
+genre_count = df_genres["genres"].value_counts()
+print(genre_count)
 
-#4
-
-df["primary_genre"] = df["genres"].apply(lambda x: x.split(",")[0])
-
-sorted_df = df.sort_values(by="primary_genre")
-
-print(sorted_df[["title", "primary_genre"]])
-#5
-
-
-df["director"] = df["director"].fillna("")
-directors = df["director"].str.split(",").explode()
-
-director_counts = directors.value_counts().reset_index()
-director_counts.columns = ["director", "count"]
-
-top10 = director_counts.head(10)
-
-fig = px.bar(top10, x="director", y="count",
-             title="Top 10 režisera po broju filmova")
-
+fig = px.bar(genre_count.head(10), x=genre_count.head(10).index, y=genre_count.head(10).values)
 fig.show()
 
+# 6
+print(df.loc[df["year_norm"].idxmin()]["title"])
+print(df.loc[df["year_norm"].idxmax()]["title"])
 
-#6
-
-oldest = df.loc[df["year_norm"].idxmin()]
-newest = df.loc[df["year_norm"].idxmax()]
-
-print("Najstariji film:", oldest["title"])
-print("Najnoviji film:", newest["title"])
-
-#7
-
-fig = px.histogram(df, x="year_norm", nbins=20,
-                   title="Distribucija filmova po godinama")
-
+# 7
+fig = px.histogram(df, x="year_norm")
 fig.show()
 
-#8
-def director_not_writer(row):
-    directors = set(str(row["director"]).split(","))
-    writers = set(str(row["writers"]).split(","))
-    return len(directors.intersection(writers)) == 0
+# 8
+print(df[df["director"] != df["writers"]]["title"])
 
-result = df[df.apply(director_not_writer, axis=1)]
-
-print(result["title"])
-
-
-#9
-
-df["genre_split"] = df["genres"].str.split(",")
-df_exploded = df.explode("genre_split")
-
-fig = px.scatter(df_exploded,
-                 x="year_norm",
-                 y="genre_split",
-                 title="Godina vs Žanr")
-
+# 9
+df_genres = df.assign(genres=df["genres"].str.split(", ")).explode("genres")
+fig = px.scatter(df_genres, x="year_norm", y="genres",  hover_name='title', )
 fig.show()
